@@ -49,11 +49,17 @@ pub fn main() {
     let mut events_loop = glutin::EventsLoop::new();
     let window_config = glutin::WindowBuilder::new()
         .with_title("Triangle example".to_string())
-        .with_dimensions(1024, 768);
+        .with_dimensions((1024, 768).into());
 
     let (api, version, vs_code, fs_code) = if cfg!(target_os = "emscripten") {
         (
             glutin::Api::WebGl, (2, 0),
+            include_bytes!("shader/triangle_300_es.glslv").to_vec(),
+            include_bytes!("shader/triangle_300_es.glslf").to_vec(),
+        )
+    } else if cfg!(target_os = "android") {
+        (
+            glutin::Api::OpenGlEs, (3, 0),
             include_bytes!("shader/triangle_300_es.glslv").to_vec(),
             include_bytes!("shader/triangle_300_es.glslf").to_vec(),
         )
@@ -93,8 +99,9 @@ pub fn main() {
                     },
                     ..
                 } => return ControlFlow::Break,
-                WindowEvent::Resized(width, height) => {
-                    window.resize(width, height);
+                WindowEvent::Resized(logical_size) => {
+                    let dpi_factor = window.get_hidpi_factor();
+                    window.resize(logical_size.to_physical(dpi_factor));
                     gfx_window_glutin::update_views(&window, &mut data.out, &mut main_depth);
                 },
                 _ => (),
