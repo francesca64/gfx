@@ -133,7 +133,9 @@ A: Sized + ApplicationBase<gfx_device_gl::Resources, gfx_device_gl::CommandBuffe
     let mut events_loop = glutin::EventsLoop::new();
     let (window, mut device, mut factory, main_color, main_depth) =
         gfx_window_glutin::init::<ColorFormat, DepthFormat>(window, context, &events_loop);
-    let (mut cur_width, mut cur_height) = window.get_inner_size().unwrap();
+    let logical_size = window.get_inner_size().unwrap();
+    let dpi_factor = window.get_hidpi_factor();
+    let (mut cur_width, mut cur_height) = logical_size.to_physical(dpi_factor).into();
     let shade_lang = device.get_info().shading_language;
 
     let backend = if shade_lang.is_embedded {
@@ -162,7 +164,8 @@ A: Sized + ApplicationBase<gfx_device_gl::Resources, gfx_device_gl::CommandBuffe
                         },
                         ..
                     } if key == A::get_exit_key() => running = false,
-                    winit::WindowEvent::Resized(width, height) => {
+                    winit::WindowEvent::Resized(logical_size) => {
+                        let (width, height) = logical_size.to_physical(dpi_factor).into();
                         if width != cur_width || height != cur_height {
                             window.resize(width, height);
                             cur_width = width;
